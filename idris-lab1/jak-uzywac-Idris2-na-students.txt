@@ -1,0 +1,3 @@
+idris2 --cg racket -o Hello Hello.idr
+
+./build/exec/Hello

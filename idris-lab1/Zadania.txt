@@ -1,0 +1,82 @@
+1. Dla wektorów napisz:
+ 
+a) my_vect_map : (a -> b) -> Vect n a -> Vect n b
+b) insert, który wsortowuje element x do posortowanej listy
+
+insert : Ord elem => (x : elem) -> (xsSorted : Vect k elem) -> Vect (S k) elem
+
+c) insertion sort, używając insert z poprzedniego podpunktu
+
+insSort : Ord elem => Vect n elem -> Vect n elem 
+
+pamiętaj o import Data.Vect
+
+2. Załóżmy, że typ macierzy nxm (n wierszy m kolumn) o wartościach w typie a reprezentowany jest przez Vect n (Vect m a). 
+
+Używając:
+
+create_empties : {n : Nat} -> Vect n (Vect 0 elem)
+create_empties {n = Z} = []
+create_empties {n = (S k)} = [] :: create_empties
+
+
+Napisz funkcje: 
+
+a) transpose_mat : {n : _} -> Vect m (Vect n elem) -> Vect n (Vect m elem)
+zamieniającą macierz 
+
+1 2 3
+4 5 6
+
+na
+
+1 4
+2 5
+3 6
+
+b) addMatrix : Num a => Vect n (Vect m a) -> Vect n (Vect m a) -> Vect n (Vect m
+
+c) multMatrix : Num a => {p: _} -> Vect m (Vect n a) -> Vect n (Vect p a) -> Vect m (Vect p a)
+
+Wskazówka do c) zacznij od transpose_mat prawej macierzy 
+
+3. Obejrzyj typ Fin i funkcje integerToFin i index
+ 
+(:module Data.Vect, :doc Fin, :t integerToFin, :t index)
+
+sprawdź wartości:
+
+integerToFin 0 4
+integerToFin 1 4
+integerToFin 2 4
+integerToFin 3 4
+integerToFin 4 4
+
+Napisz funkcje:
+
+a) tryIndex : {n: _} -> Integer -> Vect n a -> Maybe a
+b) vectTake - odpowiednik take dla list, biorący pod uwagę długości wektorów
+c) sumEntriesAt : Num a => {n: _} -> (pos : Integer) -> Vect n a -> Vect n a -> Maybe a
+
+sumująca wartości z dwóch wektorów pod indeksami pos
+
+4. Obejrzyj plik Printf.idr i rozszerz o formaty dla Char i Double
+
+5. Zdefiniuj funkcję TupleVect : Nat -> Type -> Type,
+budującą typ wektorów o danej długości, używając zagnieżdżonych krotek: 
+
+(TupleVect 0 ty) to ma być typ  ()
+(TupleVect 1 ty) to ma być typ  (ty, ())
+(TupleVect 2 ty) to ma byc typ  (ty, (ty, ()))
+....
+
+Czyli zdefiniuj funkcję obliczającą typy
+      TupleVect: Nat -> Type -> Type
+, tak żeby:
+
+test : TupleVect 4 Nat
+test = (1,2,3,4,())
+
+Napisz appendTV dla takich wektorów.
+
+
