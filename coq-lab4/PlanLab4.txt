@@ -1,0 +1,13 @@
+Exercises:
+
+* OneSortStackMachine.v and MultiSortStackMachine.v
+* fin.v
+
+OneSortStackMachine.v, MultiSortStackMachine.v come from
+CPDT by Chlipala.
+Exercises in fin.v come from
+https://www.ps.uni-saarland.de/~smolka/drafts/icl2021.pdf
+
+
+
+
