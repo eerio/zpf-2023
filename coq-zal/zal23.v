@@ -1,5 +1,5 @@
 Set Implicit Arguments.
-Require Import  List.
+Require Import List.
 Require Import Eqdep.
 Require Import Eqdep_dec.
 Require Import Lia.
@@ -60,10 +60,9 @@ Prove lemmas cPL0, cPL1, cPL2 and cPL3
 
 Lemma cPL0: forall (l:list A), length (filterL l) = countPL l.
 Proof.
-intros.
+intro l.
 induction l.
-- simpl.
-  reflexivity.
+- reflexivity. 
 - simpl.
   destruct P_dec.
   + simpl.
@@ -77,24 +76,20 @@ Print Forall.
 Lemma cPL1: forall (l:list A), countPL l = 0 -> 
            Forall (fun x => ~P x) l.
 Proof.
-intros.
+intros l H.
 induction l.
 - constructor 1. 
-- constructor 2.
-  + simpl in H.
-    destruct P_dec in H.
-    * congruence.
-    * assumption.
-  + apply IHl.
-    simpl in H.
-    destruct P_dec in H.
-    * congruence.
-    * assumption.
+- constructor 2;
+  try apply IHl;
+  simpl in H;
+  destruct P_dec in H;
+  try congruence;
+  try assumption.
 Qed.
 
 Lemma cPL2_aux: forall (l:list A), countPL l <= length l.
 Proof.
-intros.
+intro l.
 induction l.
 - constructor.
 - simpl.
@@ -103,7 +98,7 @@ Qed.
 
 Lemma cPL2: forall (l:list A), countPL l = length l -> Forall P l.
 Proof.
-intros.
+intros l H.
 induction l.
 - constructor.
 - simpl in H.
@@ -121,15 +116,13 @@ Qed.
 
 Lemma cPL3: forall (l:list A), Forall P (filterL l).
 Proof.
-intros.
+intro l.
 induction l.
 - constructor.
 - simpl.
-  destruct P_dec.
-  + constructor.
-    * assumption.
-    * assumption.
-  + assumption. 
+  destruct P_dec;
+  try constructor;
+  assumption.
 Qed.
 
 End filterL.
@@ -200,7 +193,7 @@ Prove lemmas cPV1, cPV2 and cPV3:
 Lemma cPV1: forall (n:nat)(v:vector n), countPV v = 0 -> 
            ForallV (fun x => ~P x) v.
 Proof.
-intros.
+intros n v H.
 induction v.
 - constructor.
 - simpl in H.
@@ -215,7 +208,7 @@ Qed.
 
 Lemma cPV2_aux : forall(n:nat) (v:vector n), countPV v <= n.
 Proof.
-intros.
+intros n v.
 induction v.
 - constructor.
 - simpl.
@@ -228,35 +221,30 @@ Qed.
 
 Lemma cPV2: forall (n:nat) (v:vector n), countPV v = n -> ForallV P v.
 Proof.
-intros.
+intros n v H.
 induction v.
 - constructor.
 - simpl in H.
   destruct P_dec.
-  + assert (countPV v = n).
+  + assert (countPV v = n) as H0.
     lia.
     constructor.
     * assumption.
     * apply IHv. apply H0.
-  + constructor.
-    * exfalso.
-      pose proof (cPV2_aux v).
-      lia.
-    * exfalso.
-      pose proof (cPV2_aux v).
-      lia.
+  + constructor;
+    exfalso;
+    pose proof (cPV2_aux v);
+    lia.
 Qed.
 
 Lemma cPV3: forall n (v: vector n), ForallV P (filterV v).
 Proof.
-intros.
+intros n v.
 induction v.
 - constructor.
 - simpl.
   destruct P_dec.
-  + constructor.
-    * assumption.
-    * assumption.
+  + constructor; assumption.
   + assumption.
 Qed.
 
@@ -279,7 +267,7 @@ induction v.
   exists a.
   exists v.
   reflexivity.
-Qed.
+Defined.
 
 (* Write the definition of toList *)
 Fixpoint toList {n} (v:vector n) : list A :=
@@ -295,7 +283,7 @@ lenToList should be transparent (use Defined.)
 
 Lemma lenToListEqn: forall n (v: vector n), length (toList v) = n.
 Proof.
-intros.
+intros n v.
 induction v.
 - constructor.
 - simpl.
@@ -305,14 +293,13 @@ Defined.
 
 Lemma injectiveToList: forall n (v v': vector n), toList v' = toList v -> v' = v.
 Proof.
-intros n.
-induction n.
-- intros.
-  pose proof (cPVInversion v).  
-  pose proof (cPVInversion v'). congruence.
-- intros.
-  pose proof (cPVInversion v). pose proof (cPVInversion v').
-  simpl in X. simpl in X0.
+intro n.
+induction n;
+intros v v' H;
+pose proof (cPVInversion v);
+pose proof (cPVInversion v').
+- congruence.
+- simpl in X. simpl in X0.
   destruct X as [Xa Xb]. destruct Xb as [Xb Xc].
   destruct X0 as [Ya Yb]. destruct Yb as [Yb Yc].
   rewrite Yc in H. rewrite Xc in H. simpl in H.
@@ -331,7 +318,7 @@ Print sig.
 Lemma surjectiveToList: forall  (l: list A), 
       sig (fun (v: vector (length l)) =>  toList v = l).
 Proof.
-intros.
+intro l.
 induction l.
 - simpl. exists Vnil. reflexivity.
 - destruct IHl. exists (Vcons a x). simpl. f_equal. assumption.
@@ -352,25 +339,32 @@ Prove lemmas iso1 and iso2
 
 Lemma iso1: forall (l:list A), toList (toVector l) = l.
 Proof.
-intros.
+intro l.
 induction l.
 - constructor.
 - simpl. f_equal. assumption.
 Qed.
 
+Print UIP_refl.
+
 Lemma iso2: forall n (v: vector n), v = match (lenToListEqn v) with
                                             | eq_refl => toVector (toList v)
                                             end.
 Proof.
-intros.
+intros n v.
 induction v.
 - constructor.
 - simpl.
-  assert (forall (v': vector n), v=v' -> Vcons a v = Vcons a v').
+  rewrite IHv at 1.
+  generalize (lenToListEqn v).
+  generalize (lenToListEqn (Vcons a v)).
   intros.
-  congruence.
-  simpl in IHv.
-Admitted.
+  simpl in H.
+  revert H.
+  destruct e.
+  intro.
+  easy.
+Qed.
 
 
 (*
@@ -379,57 +373,21 @@ Prove cPVfilterVIdentity
 
 (* Recall that UIP_refl nat is provable in Coq *)
 
-Check (UIP_refl nat).
-
-(*
-Fixpoint vappend {n m : nat} (v1 : vector n) (v2 : vector m) {struct v1}
-  : vector (n + m) := 
-    match v1 (*in vector l' return vector (l' + m)*) with
-    | Vnil => v2
-    | Vcons x xs => Vcons x (vappend xs v2)
-    end.
-Theorem vappend_assoc_UIP
-  : forall a b c (va : vector a) (vb : vector b) (vc : vector c),
-      vappend (vappend va vb) vc (*vector ((a+b)+c) *)
-  = match Plus.plus_assoc a b c in _ = X return vector X with
-   | eq_refl => vappend va (vappend vb vc) 
-                 (*vector (a + (b+c))*)
-        end.
-  Proof.
-    induction va.
-    - intros.
-      simpl.
-      (*generalize (vappend vb vc).*) 
-      generalize (PeanoNat.Nat.add_assoc 0 b c).
-      intro.
-      simpl in e.
-      rewrite (UIP_refl nat (b+c) e).
-      reflexivity.
-    - simpl. intros. rewrite IHva; clear IHva.
-      (*generalize (vappend va (vappend vb vc)).
-      intro.*)
-      generalize (PeanoNat.Nat.add_assoc n b c).
-      generalize (PeanoNat.Nat.add_assoc (S n) b c).
-      intros.
-      simpl in e.
-      revert e0 e.
-      generalize (n + b + c).
-      intros.
-      destruct e0.
-      rewrite (UIP_refl nat (S (n + (b + c))) e).
-      reflexivity.
-  Qed.*)
+Check (UIP_refl nat). 
 
 Lemma cPVfilterVIdentity: forall (n:nat) (v:vector n) (d: n = countPV v),
 filterV v = match d in _= m return vector m with
                             | eq_refl => v
                             end.
 Proof.
-induction v.
-- simpl. intros. rewrite (UIP_refl nat 0 d). reflexivity.
-- simpl. intros. destruct P_dec.
-  + assert (n = countPV v). lia. 
-Admitted.
+intros n v d.
+induction v; simpl; intros.
+- rewrite (UIP_refl nat 0 d). reflexivity.
+- simpl in d. destruct P_dec.
+  + assert (n = countPV v). lia. rewrite (IHv H).
+    destruct H. rewrite (UIP_refl nat (S n) d). reflexivity.
+  + exfalso. pose proof (cPV2_aux v). lia.
+Qed.
 
 (* 
 cPVtc is a type-cast needed to formulate the lemma given below
@@ -437,7 +395,7 @@ cPVtc is a type-cast needed to formulate the lemma given below
 
 Lemma cPVtc : forall {n:nat} (v:vector n),  countPV v = countPV (filterV v).
 Proof.
-intros.
+intros n v.
 induction v.
 - constructor.
 - simpl. destruct P_dec.
@@ -459,9 +417,8 @@ Lemma filterV_idem: forall {n:nat} (v:vector n),
                             end.
 Proof.
 intros.
-induction v.
-- simpl. rewrite (UIP_refl _ _ (cPVtc Vnil)). reflexivity.
-Admitted.
+apply cPVfilterVIdentity.
+Qed.
 
 End filterV.
 
@@ -483,12 +440,10 @@ Variable P_dec : forall x, {P x}+{~P x}.
 Lemma filterVfilterL:  forall n (v:vector A n), 
       toList(filterV P P_dec v) = filterL P P_dec (toList v).
 Proof.
-intros.
+intros n v.
 induction v.
 - constructor.
-- simpl. destruct P_dec.
-  * simpl. f_equal. apply IHv.
-  * simpl. apply IHv.
+- simpl. destruct P_dec; simpl; try f_equal; apply IHv.
 Qed.
 
 (* 
@@ -497,7 +452,7 @@ The following lemma is needed as a type-cast and should be ended with Defined
 
 Lemma countPVlength: forall l, countPV P P_dec (toVector l) = length (filterL P P_dec l ).
 Proof.
-intros.
+intro l.
 induction l.
 - constructor.
 - simpl. destruct P_dec.
@@ -514,18 +469,14 @@ intros.
 induction l.
 - reflexivity.
 - simpl. destruct P_dec.
-  * simpl. rewrite (UIP_refl _ _ (countPVlength l)).
-
-assert (length (filterL P P_dec l) = countPV P P_dec (toVector l)).
-induction l.
-+ constructor.
-+ simpl. destruct P_dec. 
-++ simpl. f_equal. apply IHl0. rewrite (UIP_refl _ _ (countPVlength l)).
-   
-
-
-Admitted.
-
-
-
-
+  + simpl.
+    rewrite IHl.
+    generalize (countPVlength l).
+    generalize (countPVlength (a :: l)).
+    intros.
+    simpl in H.
+    destruct P_dec.
+    * simpl in H. destruct e. easy.
+    * congruence.
+  + easy.
+Qed.
