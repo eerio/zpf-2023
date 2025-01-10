@@ -13,3 +13,8 @@ that employs the Uniqueness of Identity Proofs (UIP) axiom to demonstrate theore
 based on equality. However, it is now widely recognized that the UIP axiom should be
 rejected, as it is incompatible with the univalence principle from homotopy
 type theory (HoTT), which is an essential framework for modern type theory.
+
+Another interesting file to look at is [Kolmogorov.v](Kolmogorov.v), which contains
+a formalization of Kolmogorov's beautiful theorem about the equivalence between the
+provability of a formula in classical logic and the provability of its double negation
+translation in intuitionistic logic.
