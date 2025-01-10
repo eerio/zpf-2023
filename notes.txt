@@ -1,5 +1,0 @@
-ghci
-
-ghc -o example example.hs
-
-https://github.com/mbenke/zpf2022

@@ -5,28 +5,14 @@ Require Import Eqdep_dec.
 Require Import Lia.
 
 
-(* Coq assignment - ZPF 2023 - due date 16.05.2023
-
-Fill the definitions and prove the lemmas given below (replace 
-Admitted with Qed or Defined)
-
-It is not allowed to: 
-1. change/erase given definitions and lemma statements,
-   section header/footer, variable declaration, etc.,
-2. introduce your own axioms, parameters, variables, hypotheses etc.,   
-3. import other modules,
-4. define Ltac tactics.
-
-It is allowed to:
-1. introduce your own definitions and auxiliary lemmas,
-2. change the order of the lemmas to prove,
-3. add comments. 
-
-Submit your solution via email before 23:59 on 16.05.2023. 
-You should submit one file named Nazwisko.v containing your proofs.
-
-The author of the assignment and the grader is Daria Walukiewicz-Chrząszcz.
-
+(*
+This file contains a variety of theorems useful for using dependently-typed
+vectors in the Coq language. The theorems and auxiliary lemmas have been proved
+by the author (Pawel Balawender) as part of the Advanced Functional Programming
+course at the University of Warsaw. The author of the assignment and the grader
+is Daria Walukiewicz-Chrząszcz, University of Warsaw. It is important to note
+that the theorems require an additional axiom: Uniqueness of Identity Proofs.
+Without assuming it, it is impossible to prove theorems using the equality sign `=`
 *)
 
 Section filterL.
