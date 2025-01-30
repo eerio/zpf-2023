@@ -1,22 +1,21 @@
-(*Definicje i lematy zaproponowane przez Rafała Stefańskiego *)
+(* Definitions and lemmas suggested by Rafał Stefański and Daria Walukiewicz-Chrząszcz *)
 Require Import String.
 Require Import List.
-
 (*
-
-Na końcu pliku dowiedziemy tw. Kołmogorowa:
-
-Theorem Kolmogorov : forall f gamma,
-  class_provable gamma f <-> intu_provable (map k gamma) (k f).
-
-
-W tym celu trzeba udowodnić (i zakończyć Qed.) wszytskie lematy
-początkowo zakończone Admitted, ew. dokładając swoje lematy 
-pomocnicze.
+At the end of the file, we prove Kolmogorov's theorem:
+For a set of premises gamma, a formula f is classicaly provable
+if and only if K(f) is intuitionistically provable from the set
+of premises {K(phi) for phi in gamma}, where `K` is Kolmogorov's double negation translation:
+Fixpoint k (f : formula) : formula :=
+  match f with
+      Var x => ~~ (Var x)
+    | (p --> q)%form => ~~( (k p) --> (k q))
+    | False => 0
+  end.
+for more information about the double negation translation,
+please refer to the nLab entry:
+https://ncatlab.org/nlab/show/double+negation+translation
 *)
-
-(*Definicje: *)
-
 
 Inductive formula : Type :=
    Var (x : string)
@@ -34,7 +33,7 @@ Definition notf f := (f --> 0) % form.
 
 Notation "'~' x" := (notf x) : formula_scope.
 
-(* Tłumaczenie Kołmogorowa *)
+  (* Kolmogorov's double negation translation *)
 Fixpoint k (f : formula) : formula :=
   match f with
       Var x => ~~ (Var x)
@@ -47,7 +46,7 @@ Definition env : Type := list formula.
 
 Print In.
 
-(* Dowód intuicjonistyczny *)
+(* Intuitionistic proof *)
 Inductive intu_provable : env -> formula -> Prop :=
   II : forall gamma a b,
     intu_provable (a::gamma) b -> intu_provable gamma (a --> b) |
@@ -61,7 +60,7 @@ Inductive intu_provable : env -> formula -> Prop :=
     intu_provable gamma 0 ->
     intu_provable gamma a.
 
-(* Dowód klasyczny *)
+(* Classical proof *)
 Inductive class_provable : env -> formula -> Prop :=
   IIC : forall gamma a b,
     class_provable (a::gamma) b -> class_provable gamma (a --> b) |
@@ -78,12 +77,8 @@ Inductive class_provable : env -> formula -> Prop :=
     class_provable gamma (~~a) ->
     class_provable gamma a.
 
-(* ======== DOWODY ===========*)
 
-
-
-
-(* Na początku dowodu poniżej dzieje się zamiana kolejności kwantyfikatorów w tezie:
+(* At the beginning of the lemma below, quantifier order change occurs:
 
 Lemma weakening_intu : forall gamma f, intu_provable gamma f  ->
   forall gamma', (forall x, In x gamma -> In x gamma') -> intu_provable gamma' f.
