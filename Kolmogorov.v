@@ -1,26 +1,21 @@
-(* Definitions and lemmas suggested by Rafał Stefański and Daria Walukiewicz-Chrząszcz *)
+(*Definicje i lematy zaproponowane przez Rafała Stefańskiego *)
 Require Import String.
 Require Import List.
 
 (*
-At the end of the file, we prove Kolmogorov's theorem:
 
-For a set of premises gamma, a formula f is classicaly provable
-if and only if K(f) is intuitionistically provable from the set
-of premises {K(phi) for phi in gamma}, where `K` is Kolmogorov's double negation translation:
+Na końcu pliku dowiedziemy tw. Kołmogorowa:
 
-Fixpoint k (f : formula) : formula :=
-  match f with
-      Var x => ~~ (Var x)
-    | (p --> q)%form => ~~( (k p) --> (k q))
-    | False => 0
-  end.
+Theorem Kolmogorov : forall f gamma,
+  class_provable gamma f <-> intu_provable (map k gamma) (k f).
 
-for more information about the double negation translation,
-please refer to the nLab entry:
-https://ncatlab.org/nlab/show/double+negation+translation
 
+W tym celu trzeba udowodnić (i zakończyć Qed.) wszytskie lematy
+początkowo zakończone Admitted, ew. dokładając swoje lematy 
+pomocnicze.
 *)
+
+(*Definicje: *)
 
 
 Inductive formula : Type :=
@@ -39,7 +34,7 @@ Definition notf f := (f --> 0) % form.
 
 Notation "'~' x" := (notf x) : formula_scope.
 
-(* Kolmogorov's translation *)
+(* Tłumaczenie Kołmogorowa *)
 Fixpoint k (f : formula) : formula :=
   match f with
       Var x => ~~ (Var x)
@@ -52,7 +47,7 @@ Definition env : Type := list formula.
 
 Print In.
 
-(* Intuitionistic proof *)
+(* Dowód intuicjonistyczny *)
 Inductive intu_provable : env -> formula -> Prop :=
   II : forall gamma a b,
     intu_provable (a::gamma) b -> intu_provable gamma (a --> b) |
@@ -66,7 +61,7 @@ Inductive intu_provable : env -> formula -> Prop :=
     intu_provable gamma 0 ->
     intu_provable gamma a.
 
-(* Classical proof *)
+(* Dowód klasyczny *)
 Inductive class_provable : env -> formula -> Prop :=
   IIC : forall gamma a b,
     class_provable (a::gamma) b -> class_provable gamma (a --> b) |
@@ -83,12 +78,12 @@ Inductive class_provable : env -> formula -> Prop :=
     class_provable gamma (~~a) ->
     class_provable gamma a.
 
-(* ======== PROOFS ===========*)
+(* ======== DOWODY ===========*)
 
 
 
 
-(* At the beginning of the proof below, we change order of the quantifiers
+(* Na początku dowodu poniżej dzieje się zamiana kolejności kwantyfikatorów w tezie:
 
 Lemma weakening_intu : forall gamma f, intu_provable gamma f  ->
   forall gamma', (forall x, In x gamma -> In x gamma') -> intu_provable gamma' f.
@@ -173,7 +168,33 @@ Lemma strong_weakening_class : forall gamma gamma' f,
   class_provable gamma f ->
   class_provable gamma' f.
 Proof.
-Admitted.
+induction gamma; intros.
+- apply (weakening_class nil gamma'); easy.
+- pose proof (H a). destruct H1.
+  + apply in_eq.
+  + destruct H1.
+    apply IIC in H0.
+    assert (weaker gamma (a :: gamma)). {
+    unfold weaker.
+    intros.
+    exists x0.
+    split.
+    - apply in_cons. assumption.
+    - apply IIC. apply AxC. apply in_eq.
+    }
+    assert (weaker gamma gamma'). {
+    unfold weaker.
+    intros.
+    apply (H x0).
+    apply in_cons. assumption.
+    }
+    pose proof (IHgamma gamma' (a --> f)%form) H4 H0.
+    apply (EIC gamma' a f).
+    * assumption.
+    * apply (EIC gamma' x a).
+      ** assumption.
+      ** apply AxC. assumption.
+Qed.
 
 (* custom *)
 Lemma simple_eic : forall gamma_cons a b,
@@ -195,8 +216,8 @@ Proof.
   apply in_cons.
 Qed.
 
-(* custom; no axiom lets us pull something on the left-hand side
-   of the turnstile symbol |-
+(* custom; żaden z aksjomatów nie pozwala wprost 
+   na wciągnięcie czegoś na lewą stronę
 *)
 Lemma embedded_intro : forall gamma a b,
   class_provable gamma (a --> b) ->
@@ -260,19 +281,6 @@ pose proof strong_weakening_class (a :: a0 :: gamma) (a0 :: a :: gamma) b H0 H.
 assumption.
 Qed.
 
-Lemma after_append_is_stronger : forall gamma a,
-  weaker gamma (a :: gamma).
-Proof.
-unfold weaker.
-intros.
-exists x.
-split.
-- apply in_cons.
-  assumption.
-- apply IIC.
-  apply AxC.
-  apply in_eq.
-Qed.
 
 Lemma after_tail_is_weaker : forall gamma,
   weaker (tail gamma) gamma.
@@ -314,35 +322,32 @@ destruct H0.
     * apply IIC. apply AxC. apply in_eq.
 Qed.
   
-
-Lemma help : forall gamma a b,
-  (class_provable gamma a -> class_provable gamma b) ->
-  class_provable gamma (a --> b).
+Lemma after_append_is_stronger : forall gamma a,
+  weaker gamma (a :: gamma).
 Proof.
+unfold weaker.
 intros.
-induction H.
-- apply embedded_intro in IHc.
-  pose proof permute gamma a a0 b IHc.
-  apply IIC.
-  apply IIC.
-  assumption.
-- apply embedded_intro in IHc1.
-  apply embedded_intro in IHc1.
-  pose proof is_weaker_if_can_merge gamma a a0 IHc2.
-  pose proof strong_weakening_class (a0 :: a :: gamma) (a :: gamma) b H IHc1.
-  apply IIC.
+exists x.
+split.
+- apply in_cons.
   assumption.
 - apply IIC.
   apply AxC.
-  apply in_cons.
-  assumption.
-- apply EFC.
-  assumption.
-- apply embedded_intro in IHc.
-  apply Cheat in IHc.
-  apply IIC in IHc.
-  assumption.
-- Admitted.
+  apply in_eq.
+Qed.
+
+
+Lemma help : forall gamma a b,
+  class_provable gamma a -> class_provable gamma b -> 
+  class_provable gamma (a --> b).
+Proof.
+intros.
+apply IIC.
+pose proof (after_append_is_stronger gamma a).
+apply (strong_weakening_class gamma).
+- assumption.
+- assumption.
+Qed.
 
 
 Lemma DNIC : forall gamma a,
@@ -355,6 +360,7 @@ apply embedded_apply.
 assumption.
 Qed.
 
+
 (* IIC, EIC, AxC, EFC, Cheat *)
 Lemma a_iff_ka : forall a,
   class_provable nil (a -->(k a)) /\
@@ -366,25 +372,55 @@ induction a.
   + unfold k. apply IIC. unfold notf. apply IIC. apply simple_eic.
   + unfold k. apply IIC. apply Cheat. apply AxC. apply in_eq. 
 - split.
-  + simpl.
+  + simpl. apply IIC. apply DNIC. apply IIC.
     destruct IHa1. destruct IHa2.
-    apply help.
-    intro.
-    pose proof composition nil (k a1) a1 a2 H0 H3.
-    pose proof composition nil (k a1) a2 (k a2) H4 H1.
-    pose proof DNIC nil ((k a1) --> (k a2)) H5.
-    assumption.
+    assert (weaker nil (k a1 :: (a1 --> a2)%form :: nil)). {
+      unfold weaker. intros. exists x. split.
+      - apply in_cons. apply in_cons. assumption.
+      - apply IIC. easy.
+    }
+    remember (k a1 :: (a1 --> a2)%form :: nil) as env.
+        pose proof (
+      strong_weakening_class
+        nil
+        env
+        (k a1 --> a1)
+        H3
+        H0).
+    pose proof (
+      strong_weakening_class
+        nil
+        env
+        (a2 --> k a2)
+        H3
+        H1).
+    pose proof (EIC env a2 (k a2)).
+    apply H6.
+    * assumption.
+    * pose proof (EIC env a1 a2). apply H7.
+      ** apply AxC. rewrite Heqenv. apply in_cons. apply in_eq.
+      ** apply (EIC env (k a1) a1). *** assumption. *** rewrite Heqenv. apply AxC. apply in_eq.
   + simpl.
-    destruct IHa1. destruct IHa2.
-    apply help.
-    intro.
-    pose proof Cheat (k a1 --> k a2) nil H3.
-    pose proof composition nil a1 (k a1) (k a2) H H4.
-    pose proof composition nil a1 (k a2) a2 H5 H2.
-    assumption.
-- split.
-  + simpl. apply IIC. apply AxC. apply in_eq.
-  + simpl. apply IIC. apply AxC. apply in_eq. 
+    destruct IHa1. destruct IHa2. apply IIC. apply IIC.
+    assert (class_provable (a1 :: (~~k a1 --> k a2)%form :: nil) (k a1 --> k a2)). {
+      apply Cheat. apply AxC. apply in_cons. apply in_eq.
+    }
+    assert (weaker nil (a1 :: (~~k a1 --> k a2)%form ::nil)). {
+     unfold weaker. intros. exists x. split. - apply in_cons. apply in_cons. assumption.
+      - apply IIC. easy.
+    }
+    pose proof (strong_weakening_class nil (a1 :: (~~k a1 --> k a2)%form :: nil) (a2 --> k a2) H4 H1).
+    pose proof (strong_weakening_class nil (a1 :: (~~k a1 --> k a2)%form :: nil) (a1 --> k a1) H4 H).
+        pose proof (strong_weakening_class nil (a1 :: (~~k a1 --> k a2)%form :: nil) (k a1 --> a1) H4 H0).
+        pose proof (strong_weakening_class nil (a1 :: (~~k a1 --> k a2)%form :: nil) (k a2 --> a2) H4 H2).
+    apply (EIC (a1 :: (~~k a1 --> k a2)%form :: nil) (k a2) a2).
+    * assumption.
+    * apply (EIC (a1 :: (~~k a1 --> k a2)%form :: nil) (k a1) (k a2)).
+    ** assumption.
+    ** apply (EIC (a1 :: (~~k a1 --> k a2)%form ::nil) a1 (k a1)).
+    *** assumption.
+    *** apply AxC. apply in_eq.
+- simpl. split; apply IIC; apply AxC; apply in_eq.
 Qed.
 
 (* custom *)
@@ -505,17 +541,185 @@ induction gamma.
       apply H1.
 Qed.
 
+Lemma DNI: forall gamma a, intu_provable gamma a -> intu_provable gamma (~~a).
+Proof.
+intros.
+apply II.
+unfold notf.
+assert (intu_provable ((a --> 0)%form :: gamma) a). {
+apply (weakening_intu gamma ((a --> 0)%form :: gamma) a).
+- intros. apply in_cons. assumption.
+- assumption.
+}
+apply (EI ((a --> 0)%form :: gamma) a 0).
++ apply Ax. apply in_eq. 
++ assumption.
+Qed.
+
+(* źródło: wykład *)
+Lemma dne_impl : forall (p : Prop) (q : Prop),
+  ((~~(p -> ~q)) -> (p -> ~q)).
+Proof.
+intro.
+intro.
+intro.
+intro.
+intro.
+apply H.
+intro.
+apply H2.
+- assumption.
+- assumption. 
+Qed.
+
+Lemma embedded_intro_intu : forall gamma a b,
+  intu_provable gamma (a --> b) ->
+  intu_provable (a :: gamma) b.
+Proof.
+intros.
+pose proof (weakening_intu gamma (a :: gamma) (a --> b) (in_cons_reorder_args formula a gamma) H).
+pose proof (Ax (a :: gamma) a (in_eq a gamma)).
+pose proof (EI (a :: gamma) a b H0 H1).
+apply H2.
+Qed.
+
+Lemma merge_intu2 : forall gamma a b,
+  intu_provable (a :: gamma) b -> intu_provable gamma a -> intu_provable gamma b.
+Proof.
+intros.
+apply II in H.
+apply (EI gamma a b) in H.
+- assumption.
+- assumption.
+Qed. 
+
+Lemma merge_intu : forall gamma a b c,
+  intu_provable (a :: b :: gamma) c -> intu_provable gamma a -> intu_provable gamma b -> intu_provable gamma c.
+Proof.
+intros.
+apply II in H.
+apply II in H.
+apply (EI gamma b) in H.
+- apply (EI gamma a) in H.
+  + assumption.
+  + assumption.
+- assumption.
+Qed.
+
+Lemma embedded_apply_intu : forall gamma a b,
+  In (a --> b)%form gamma -> intu_provable gamma a -> intu_provable gamma b.
+Proof.
+intros.
+pose proof (Ax gamma (a --> b)%form H).
+apply (EI gamma a).
+- assumption.
+- assumption.
+Qed.
+
+Lemma kolmogorov_modus_ponens : forall gamma p q,
+  intu_provable gamma (~~(p --> ~q)) ->
+  intu_provable gamma p ->
+  intu_provable gamma (~q).
+Proof.
+intros *.
+(* intros *)
+apply merge_intu.
+apply II.
+(* apply (~ p --> q) --> 0 *)
+assert (In (~~ p --> (~q))%form (q :: (~~ p --> (~q))%form :: p :: gamma)). { apply in_cons. apply in_eq. }
+pose proof (embedded_apply_intu (q :: (~~ p --> (~q))%form :: p :: gamma) (~ p --> (~q))%form 0) H.
+apply H0.
+(* intro *)
+apply II.
+(* apply p --> ~q *)
+assert (intu_provable ((p --> (~ q))%form :: q :: (~ ~ p --> (~ q))%form :: p :: gamma) (~q)). {
+  assert(In (p --> (~ q))%form ((p --> (~ q))%form :: q :: (~ ~ p --> (~ q))%form :: p :: gamma)). { apply in_eq. }
+  pose proof (embedded_apply_intu ((p --> (~ q))%form :: q :: (~ ~ p --> (~ q))%form :: p :: gamma) p (~q)) H1. 
+  apply H2.
+  apply Ax.
+  apply in_cons. apply in_cons. apply in_cons. apply in_eq.
+}
+apply (EI ((p --> (~ q))%form :: q :: (~ ~ p --> (~ q))%form :: p :: gamma) q).
+- assumption.
+- apply Ax. apply in_cons. apply in_eq.
+Qed.
+
+Lemma triple_negation_elimination: forall p, ~~~p -> ~p.
+Proof.
+unfold not.
+intros.
+apply H.
+intros.
+apply H1.
+apply H0.
+Qed.
+
+
+Lemma embedded_tne: forall gamma p, intu_provable gamma (~~~p)%form -> intu_provable gamma (~p)%form.
+Proof.
+intros *.
+apply merge_intu2.
+apply II.
+apply (EI (p :: (~~~p)%form :: gamma) (~~p)%form).
+- apply Ax. apply in_cons. apply in_eq.
+- apply II.
+  apply (EI ((~p) :: p :: (~~~p) :: gamma)%form p).
+  + apply Ax. apply in_eq.
+  + apply Ax. apply in_cons; apply in_eq.
+Qed.
+
 
 Lemma class_to_k_intu : forall f gamma,
   class_provable gamma f ->
   intu_provable (map k gamma) (k f).
 Proof.
 intros.
-pose proof a_iff_ka_strong2 gamma f.
-destruct H0.
-pose proof H0 H.
-induction gamma.
-Admitted.
+induction H.
+- simpl in IHclass_provable. simpl. apply II in IHclass_provable. apply DNI. assumption.
+- simpl in IHclass_provable1.
+  induction b; simpl.
+  + simpl in IHclass_provable1.
+    pose proof (kolmogorov_modus_ponens (map k gamma) (k a) (~ Var x)%form).
+    apply (H1 IHclass_provable1 IHclass_provable2).
+  + pose proof (kolmogorov_modus_ponens (map k gamma) (k a) (~ k b1 --> k b2)%form).
+    apply (H1 IHclass_provable1 IHclass_provable2).
+  + assert (intu_provable (map k gamma) (~ k a)). {
+      apply II.
+      assert (intu_provable (k a :: map k gamma) (~~~ k a)). {
+        apply (weakening_intu (map k gamma) (k a :: map k gamma)).
+        - intro. apply in_cons.
+        - assumption.
+      }
+      apply (EI (k a :: map k gamma) (~~ k a)).
+      * assumption.
+      * apply II.
+        apply (EI ((~ k a)%form :: k a :: map k gamma) (k a) 0).
+        ** apply Ax. apply in_eq.
+        ** apply Ax. apply in_cons. apply in_eq.
+    }
+    apply (EI (map k gamma) (k a)).
+    * assumption.
+    * assumption.
+- apply Ax. apply in_map. assumption.
+- apply EF. assumption.
+- destruct a.
+  + simpl in IHclass_provable.
+    apply (embedded_tne (map k gamma) (~~~~~Var x)) in IHclass_provable.
+    apply (embedded_tne (map k gamma) (~~~Var x)) in IHclass_provable.
+    apply (embedded_tne (map k gamma) (~Var x)) in IHclass_provable.
+    simpl. assumption.
+  + simpl in IHclass_provable.
+    apply (embedded_tne (map k gamma) (~~~~~k a1 --> k a2)%form) in IHclass_provable.
+    apply (embedded_tne (map k gamma) (~~~k a1 --> k a2)%form) in IHclass_provable.
+    apply (embedded_tne (map k gamma) (~k a1 --> k a2)%form) in IHclass_provable.
+    simpl; assumption.
+  + simpl in IHclass_provable. 
+    apply (embedded_tne (map k gamma) (~~~0)%form) in IHclass_provable.
+    apply (embedded_tne (map k gamma) (~0)) in IHclass_provable.
+    apply (EI (map k gamma) (0 --> 0)%form 0) in IHclass_provable.
+    * assumption.
+    * apply II. apply Ax. apply in_eq.
+Qed.
 
 Theorem Kolmogorov : forall f gamma,
   class_provable gamma f <-> intu_provable (map k gamma) (k f).
